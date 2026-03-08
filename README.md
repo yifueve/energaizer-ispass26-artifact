@@ -69,7 +69,7 @@ Please navigate to `database/code` and follow the instructions in [`database/cod
 
 ### Run Everything
 
-1. After activating the virtual environment, run this command. It will take 1-2 hours to be completed.
+1. After activating the virtual environment, run this command. It will take about 1-2 hours to be completed.
 ```bash
 bash figures/scripts/all.sh
 ```
