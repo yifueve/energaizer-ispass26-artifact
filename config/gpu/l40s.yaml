@@ -1,0 +1,18 @@
+gpu_configs:
+  dram_bw: 846 # GB/s, 80GB SXM
+  dram_freq: 2250 # MHz (check with nvidia-smi -q -d CLOCK)
+  # cuda_fp64_flops: 9.7 # TFLOPs, CUDA
+  cuda_fp32_flops: 91.6 # TFLOPs, CUDA
+  # tc_fp64_flops: 19.5 # TFLOPs, TensorCore
+  # tc_fp32_flops: 156 # TFLOPs, TensorCore
+  tc_bf16_flops: 362.05 # TFLOPs, TensorCore
+  tc_fp16_flops: 362.05 # TFLOPs, TensorCore
+  # tc_int8_flops: 624 # TFLOPs, TensorCore
+  sm_freq: 900 #MHz, If not sure, check the maximum frequency with nvidia-smi -q -d CLOCK
+  sm_max_freq: 2520 #Boosted maximum frequency where the TFLOPs were reported
+  num_sm: 142
+  dram_size: 48 # GB
+  power_cap: 350 # W
+  l2_size: 48 # MB
+  l2_bw: 5120 # Bytes/cycle (check Whitepaper)
+  xu_bw_per_sm: 16 # 16 instructions per cycle throughput per SM

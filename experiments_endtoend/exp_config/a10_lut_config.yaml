@@ -1,0 +1,72 @@
+lut_config:
+  softmax:
+    bf16:
+      - path: 'a10_softmax_bf16_freq900_lut.csv'
+        prepaared: false
+        main: true
+        use_for_model: true
+        use_for_kernel: true
+        require_annotation: false
+    fp32:
+      - path: 'a10_softmax_fp32_freq900_lut.csv'
+        prepaared: false
+        main: true
+        use_for_model: true
+        use_for_kernel: true
+        require_annotation: false
+  layernorm:
+    bf16:
+      - path: 'a10_layernorm_bf16_freq900_lut.csv'
+        prepaared: false
+        main: true
+        use_for_model: true
+        use_for_kernel: true
+        require_annotation: false
+    fp32:
+      - path: 'a10_layernorm_fp32_freq900_lut.csv'
+        prepaared: false
+        main: true
+        use_for_model: true
+        use_for_kernel: true
+        require_annotation: false     
+  gemm:
+    tc:
+      bf16_bf16:
+        - path: 'a10_gemm_bf16bf16_freq900_lut.csv'
+          prepared: false
+          main: true
+          use_for_model: true
+          use_for_kernel: true
+          require_annotation: false
+    cuda:
+      fp32_fp32: 
+        - path: 'a10_gemm_fp32fp32_freq900_lut.csv'
+          prepared: false
+          main: true
+          use_for_model: true
+          use_for_kernel: true
+          require_annotation: false
+  conv2d:
+    tc:
+      bf16_bf16:
+        - path: 'a10_conv2d_bf16_freq900_lut.csv'
+          prepared: false
+          main: true
+          use_for_model: true
+          use_for_kernel: true
+          require_annotation: false
+  elementwise:
+    - path: 'a10_misc_elementwise_freq900_lut.csv'
+      prepared: false
+      main: true
+      use_for_model: true
+      use_for_kernel: true
+      require_annotation: false
+  # flashattention_v2:
+  #   bf16:
+  #     - path: 'yz8_flashattention_freq900_lut.csv'
+  #       prepared: false
+  #       main: true
+  #       use_for_model: true
+  #       use_for_kernel: true
+  #       require_annotation: false

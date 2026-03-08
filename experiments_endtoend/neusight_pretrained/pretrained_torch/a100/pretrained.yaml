@@ -1,0 +1,24 @@
+('gemm', 'tc', 'bf16_bf16'):
+  time: neusight_pretrained/pretrained_torch/a100/gemm_tc_bf16_bf16_time.pth
+  power: neusight_pretrained/pretrained_torch/a100/gemm_tc_bf16_bf16_power.pth
+('softmax', 'bf16'):
+  time: neusight_pretrained/pretrained_torch/a100/softmax_bf16_time.pth
+  power: neusight_pretrained/pretrained_torch/a100/softmax_bf16_power.pth
+('softmax', 'fp32'):
+  time: neusight_pretrained/pretrained_torch/a100/softmax_fp32_time.pth
+  power: neusight_pretrained/pretrained_torch/a100/softmax_fp32_power.pth
+('layernorm', 'bf16'):
+  time: neusight_pretrained/pretrained_torch/a100/layernorm_bf16_time.pth
+  power: neusight_pretrained/pretrained_torch/a100/layernorm_bf16_power.pth
+('conv2d', 'tc', 'bf16_bf16'):
+  time: neusight_pretrained/pretrained_torch/a100/conv2d_tc_bf16_bf16_time.pth
+  power: neusight_pretrained/pretrained_torch/a100/conv2d_tc_bf16_bf16_power.pth
+('elementwise',):
+  time: neusight_pretrained/pretrained_torch/a100/elementwise_time.pth
+  power: neusight_pretrained/pretrained_torch/a100/elementwise_power.pth
+('gemm', 'cuda', 'fp32_fp32'):
+  time: neusight_pretrained/pretrained_torch/a100/gemm_cuda_fp32_fp32_time.pth
+  power: neusight_pretrained/pretrained_torch/a100/gemm_cuda_fp32_fp32_power.pth
+('layernorm', 'fp32'):
+  time: neusight_pretrained/pretrained_torch/a100/layernorm_fp32_time.pth
+  power: neusight_pretrained/pretrained_torch/a100/layernorm_fp32_power.pth

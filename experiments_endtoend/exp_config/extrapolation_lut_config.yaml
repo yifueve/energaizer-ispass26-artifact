@@ -1,0 +1,255 @@
+lut_config:
+  softmax:
+    bf16:
+      - path: 'yz8_softmax_bf16_freq900_lut.csv'
+        prepared: false
+        main: true
+        use_for_model: true
+        use_for_kernel: true
+        require_annotation: false
+        gpu_config_key: 'yz8'
+      - path: 'yz8_softmax_bf16_freq510_lut.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'yz8'
+      - path: 'yz8_softmax_bf16_freq705_lut.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'yz8'
+      # - path: 'yz8_softmax_bf16_freq1410_lut.csv'
+      #   prepared: false
+      #   main: false
+      #   use_for_model: true
+      #   use_for_kernel: false
+      #   require_annotation: false
+      - path: 'netsres_softmax_bf16_nolock.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'netsres117'
+    fp32:
+      - path: 'yz8_softmax_fp32_freq900_lut.csv'
+        prepared: false
+        main: true
+        use_for_model: true
+        use_for_kernel: true
+        require_annotation: false
+        gpu_config_key: 'yz8'
+      - path: 'yz8_softmax_fp32_freq510_lut.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'yz8'
+      - path: 'yz8_softmax_fp32_freq705_lut.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'yz8'
+      # - path: 'yz8_softmax_fp32_freq1410_lut.csv'
+      #   prepared: false
+      #   main: false
+      #   use_for_model: true
+      #   use_for_kernel: false
+      #   require_annotation: false
+      - path: 'netsres_softmax_fp32_nolock.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'netsres117'
+  layernorm:
+    bf16:
+      - path: 'yz8_layernorm_bf16_freq900_lut.csv'
+        prepared: false
+        main: true
+        use_for_model: true
+        use_for_kernel: true
+        require_annotation: false
+        gpu_config_key: 'yz8'
+      # - path: 'yz8_layernorm_bf16_freq1410_lut.csv'
+      #   prepared: false
+      #   main: false
+      #   use_for_model: true
+      #   use_for_kernel: false
+      #   require_annotation: false
+      - path: 'yz8_layernorm_bf16_freq510_lut.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'yz8'
+      - path: 'yz8_layernorm_bf16_freq705_lut.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'yz8'
+      - path: 'netsres_layernorm_bf16_nolock.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'netsres117'
+    fp32:
+      - path: 'yz8_layernorm_fp32_freq900_lut.csv'
+        prepared: false
+        main: true
+        use_for_model: true
+        use_for_kernel: true
+        require_annotation: false   
+        gpu_config_key: 'yz8'
+      # - path: 'yz8_layernorm_fp32_freq1410_lut.csv'
+      #   prepared: false
+      #   main: false
+      #   use_for_model: true
+      #   use_for_kernel: false
+      #   require_annotation: false 
+      - path: 'yz8_layernorm_fp32_freq510_lut.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'yz8'
+      - path: 'yz8_layernorm_fp32_freq705_lut.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'yz8'
+      - path: 'netsres_layernorm_fp32_nolock.csv'
+        prepared: false
+        main: false
+        use_for_model: true
+        use_for_kernel: false
+        require_annotation: false
+        gpu_config_key: 'netsres117'
+  gemm:
+    tc:
+      bf16_bf16:
+        - path: 'yz8_gemmex_bf16bf16_freq900_noflush_lut_v2.csv'
+          prepared: false
+          main: true
+          use_for_model: true
+          use_for_kernel: true
+          require_annotation: false
+          gpu_config_key: 'yz8'
+        - path: 'yz8_gemmex_bf16bf16_freq510_noflush_lut_v2.csv'
+          prepared: false
+          main: false
+          use_for_model: true
+          use_for_kernel: false
+          require_annotation: false
+          gpu_config_key: 'yz8'
+        - path: 'yz8_gemmex_bf16bf16_freq705_noflush_lut_v2.csv'
+          prepared: false
+          main: false
+          use_for_model: true
+          use_for_kernel: false
+          require_annotation: false
+          gpu_config_key: 'yz8'
+        # - path: 'yz8_gemmex_bf16bf16_freqnolock_noflush_lut_v2.csv'
+        #   prepared: false
+        #   main: false
+        #   use_for_model: true
+        #   use_for_kernel: false
+        #   require_annotation: false
+        - path: 'netsres117_gemm_bf16_bf16_lut_prepared.csv'
+          prepared: true
+          main: false
+          use_for_model: true
+          use_for_kernel: false
+          require_annotation: false
+          gpu_config_key: 'netsres117'
+    cuda:
+      fp32_fp32: 
+        - path: 'yz8_sgemm_freq900_noflush_lut_v2.csv'
+          prepared: false
+          main: true
+          use_for_model: true
+          use_for_kernel: true
+          require_annotation: false
+          gpu_config_key: 'yz8'
+        - path: 'yz8_sgemm_freq510_noflush_lut_v2.csv'
+          prepared: false
+          main: false
+          use_for_model: true
+          use_for_kernel: false
+          require_annotation: false
+          gpu_config_key: 'yz8'
+        - path: 'yz8_sgemm_freq705_noflush_lut_v2.csv'
+          prepared: false
+          main: false
+          use_for_model: true
+          use_for_kernel: false
+          require_annotation: false
+          gpu_config_key: 'yz8'
+        # - path: 'yz8_sgemm_freqnolock_noflush_lut_v2.csv'
+        #   prepared: false
+        #   main: false
+        #   use_for_model: true
+        #   use_for_kernel: false
+        #   require_annotation: false
+        - path: 'netsres117_sgemm_fp32_lut_v2_prepared.csv'
+          prepared: true
+          main: false
+          use_for_model: true
+          use_for_kernel: false
+          require_annotation: false
+          gpu_config_key: 'netsres117'
+  conv2d:
+    tc:
+      bf16_bf16:
+        - path: 'yz8_conv2d_bf16_freq900_lut.csv'
+          prepared: false
+          main: true
+          use_for_model: true
+          use_for_kernel: true
+          require_annotation: false
+          gpu_config_key: 'yz8'
+  elementwise:
+    - path: 'yz8_misc_elementwise_freq900_lut.csv'
+      prepared: false
+      main: true
+      use_for_model: true
+      use_for_kernel: true
+      require_annotation: false
+      gpu_config_key: 'yz8'
+    - path: 'yz8_misc_elementwise_freq510_lut.csv'
+      prepared: false
+      main: false
+      use_for_model: true
+      use_for_kernel: false
+      require_annotation: false
+      gpu_config_key: 'yz8'
+    - path: 'yz8_misc_elementwise_freq705_lut.csv'
+      prepared: false
+      main: false
+      use_for_model: true
+      use_for_kernel: false
+      require_annotation: false
+      gpu_config_key: 'yz8'
+    - path: 'yz8_misc_elementwise_freq1410_lut.csv'
+      prepared: false
+      main: false
+      use_for_model: true
+      use_for_kernel: false
+      require_annotation: false
+      gpu_config_key: 'yz8'

@@ -1,0 +1,14 @@
+MLP_hidden_power: 512
+MLP_hidden_time: 512
+MLP_layers_power: 5
+MLP_layers_time: 5
+MLP_odim_power: 1
+batch_size: 128
+epoch_power: 300
+epoch_time: 300
+log_normalize_inputs: true
+loss: SMAPE
+lr_power: '0.001'
+lr_time: '0.001'
+train_power_model_using_true_time: true
+validation_fraction: 0

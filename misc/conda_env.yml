@@ -1,0 +1,21 @@
+name: energaizer_env
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - numpy
+      - pandas
+      - pynvml
+      - pyyaml
+      - scipy
+      - torch==2.7.1
+      - torchaudio
+      - torchvision
+      - torchlens
+      - transformers==4.51.3
+      - cvxpy
+      - tqdm
+      - scikit-learn
+      - opt-einsum
+      - matplotlib
+      - ipykernel
