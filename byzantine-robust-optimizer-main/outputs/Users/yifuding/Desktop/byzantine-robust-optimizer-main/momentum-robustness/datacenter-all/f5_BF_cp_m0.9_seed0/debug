@@ -1,0 +1,32 @@
+ParallelTrainer(aggregator=Clipping (tau=10, n_iter=1), max_batches_per_epoch=1, log_interval=1, metrics=['mae', 'rmse']use_cuda=False, debug=False, )
+DistributedEvaluator(use_cuda=False, debug=False, )
+=> Add worker BitFlippingWorker
+=> Add worker BitFlippingWorker
+=> Add worker BitFlippingWorker
+=> Add worker BitFlippingWorker
+=> Add worker BitFlippingWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+=> Add worker TorchWorker
+Train epoch 1
+[E 1B0  |   1600/48104 (  3%) ] Loss: 1324.1438 mae= 31.4076 rmse= 35.7768
+
+=> Eval Loss=275.7218 mae= 14.3140 rmse= 16.5786
+
