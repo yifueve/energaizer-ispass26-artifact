@@ -4,6 +4,7 @@ import os
 import warnings
 warnings.filterwarnings('ignore')
 
+import inspect
 import pandas as pd
 import numpy as np
 import yaml
@@ -22,6 +23,14 @@ except:
 sys.path.append('..')
 from gee import get_gee
 from gee.frontend_utils import *
+
+def make_adaboost_classifier(weak_learner, n_estimators=10):
+    kwargs = {'n_estimators': n_estimators}
+    if 'estimator' in inspect.signature(AdaBoostClassifier).parameters:
+        kwargs['estimator'] = weak_learner
+    else:
+        kwargs['base_estimator'] = weak_learner
+    return AdaBoostClassifier(**kwargs)
 
 class LiEstimator(Estimator):
     def __init__(self, gpu_config_yaml, lut_config_yaml, lut_folder_abs_path='/mnt/c/Users/KyungmiLee/Documents/gpu-energy-estimation/lut', **kwargs):
@@ -262,11 +271,11 @@ class LiEstimator(Estimator):
 
         if (op_type[0] == 'gemm'):
             weak_learner = tree.DecisionTreeClassifier(max_depth=15, ccp_alpha=0.0005)
-            kernel_predictor = AdaBoostClassifier(estimator=weak_learner, n_estimators=10)
+            kernel_predictor = make_adaboost_classifier(weak_learner, n_estimators=10)
             kernel_predictor = kernel_predictor.fit(df[['batch', 'dimM', 'dimN', 'dimK']], df['kernel_id'])
         elif (op_type[0] == 'conv2d'):
             weak_learner = tree.DecisionTreeClassifier(max_depth=15, ccp_alpha=0.0005)
-            kernel_predictor = AdaBoostClassifier(estimator=weak_learner, n_estimators=10)
+            kernel_predictor = make_adaboost_classifier(weak_learner, n_estimators=10)
             kernel_predictor = kernel_predictor.fit(df[['b','m','c','hw','rs','stride','padding']], df['kernel_id'])
         elif (op_type[0] == 'softmax') or (op_type[0] == 'layernorm'):
             kernel_predictor = tree.DecisionTreeClassifier()

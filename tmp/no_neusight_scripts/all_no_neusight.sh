@@ -1,0 +1,3 @@
+bash tmp/no_neusight_scripts/run_single_no_neusight.sh
+bash tmp/no_neusight_scripts/figures_scripts/run_endtoend_no_neusight.sh
+bash tmp/no_neusight_scripts/figures_scripts/run_dvfs_no_neusight.sh

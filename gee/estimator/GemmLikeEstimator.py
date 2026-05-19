@@ -11,6 +11,7 @@ import yaml
 import warnings
 warnings.filterwarnings('ignore')
 
+import inspect
 from sklearn import tree
 from sklearn.ensemble import AdaBoostClassifier
 
@@ -24,6 +25,14 @@ from gee.optimization_utils import optimize
 from gee.estimator.BaseEstimator import BaseEstimator
 
 from gee.frontend_utils import fit_vector_size
+
+def make_adaboost_classifier(weak_learner, n_estimators=10):
+    kwargs = {'n_estimators': n_estimators}
+    if 'estimator' in inspect.signature(AdaBoostClassifier).parameters:
+        kwargs['estimator'] = weak_learner
+    else:
+        kwargs['base_estimator'] = weak_learner
+    return AdaBoostClassifier(**kwargs)
 
 class GemmLikeEstimator(BaseEstimator):
     def __init__(self, lut_config=None, gpu_config=None, \
@@ -231,7 +240,7 @@ class GemmLikeEstimator(BaseEstimator):
             
             if self.conv2d:
                 weak_learner = tree.DecisionTreeClassifier(max_depth=15, ccp_alpha=0.0005)
-                kernel_predictor = AdaBoostClassifier(estimator=weak_learner, n_estimators=10)
+                kernel_predictor = make_adaboost_classifier(weak_learner, n_estimators=10)
                 kernel_predictor = kernel_predictor.fit(df[['b','m','c','hw','rs','stride','padding']], df['kernel_id'])
             else:
                 if self.kernel_predictor_separate_prefill_decode:
@@ -241,7 +250,7 @@ class GemmLikeEstimator(BaseEstimator):
 
                     if len(df_decode) > 0:
                         weak_learner = tree.DecisionTreeClassifier(max_depth=15, ccp_alpha=0.0005)
-                        decode_predictor = AdaBoostClassifier(estimator=weak_learner, n_estimators=10)
+                        decode_predictor = make_adaboost_classifier(weak_learner, n_estimators=10)
                         X = df_decode[['batch', 'dimM', 'dimN', 'dimK']]
                         X = np.log2(X)
                         decode_predictor = decode_predictor.fit(X, df_decode['kernel_id'])
@@ -251,7 +260,7 @@ class GemmLikeEstimator(BaseEstimator):
                         
                     if len(df_normal) > 0:
                         weak_learner = tree.DecisionTreeClassifier(max_depth=15, ccp_alpha=0.0005)
-                        normal_predictor = AdaBoostClassifier(estimator=weak_learner, n_estimators=10)
+                        normal_predictor = make_adaboost_classifier(weak_learner, n_estimators=10)
                         X = df_normal[['batch', 'dimM', 'dimN', 'dimK']]
                         X = np.log2(X)
                         normal_predictor = normal_predictor.fit(X, df_normal['kernel_id'])
@@ -264,7 +273,7 @@ class GemmLikeEstimator(BaseEstimator):
                     X = df[['batch', 'dimM', 'dimN', 'dimK']]
                     X = np.log2(X)
                     weak_learner = tree.DecisionTreeClassifier(max_depth=15, ccp_alpha=0.0005)
-                    kernel_predictor = AdaBoostClassifier(estimator=weak_learner, n_estimators=10)
+                    kernel_predictor = make_adaboost_classifier(weak_learner, n_estimators=10)
                     kernel_predictor = kernel_predictor.fit(X, df['kernel_id'])
 
             splitk_predictor = tree.DecisionTreeClassifier()
