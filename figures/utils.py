@@ -5,6 +5,10 @@ from matplotlib.colors import to_rgba
 import numpy as np
 import os
 
+
+def _legend_kwargs(ncols):
+    return {'ncol': ncols}
+
 # Fig. 9
 def fig9_plot_grouped_error_bars(csv_path, labelmap, model_order=None, figsize=(20, 6), output_path=None, title=None, no_legend=False):
     """
@@ -101,19 +105,41 @@ def fig9_plot_grouped_error_bars(csv_path, labelmap, model_order=None, figsize=(
     prev_model = None
     current_model_start = 0
     
+    series = [
+        {
+            'column': 'limicro_time_abs_pct_err',
+            'label': 'Latency, Li et al.',
+            'color': "#0173b2",
+        },
+        {
+            'column': 'neusight_time_abs_pct_err',
+            'label': 'Latency, NeuSight',
+            'color': "#de8f05",
+        },
+        {
+            'column': 'gee_time_abs_pct_err',
+            'label': 'Latency, Ours',
+            'color': '#029e73',
+        },
+        {
+            'column': 'gee_power_abs_pct_err',
+            'label': 'Power, Ours',
+            'color': "#cc78bc",
+        },
+    ]
+    available_series = [item for item in series if item['column'] in df.columns]
+    missing_series = [item['label'] for item in series if item['column'] not in df.columns]
+    if missing_series:
+        print("Skipping missing series: {}".format(', '.join(missing_series)))
+
     # Prepare data for plotting
-    limicro_errors = []
-    neusight_errors = []
-    gee_time_errors = []
-    gee_power_errors = []
+    error_values = {item['column']: [] for item in available_series}
     x_labels = []
     
     for idx, config in enumerate(unique_configs):
         config_data = df[df['unique_id'] == config].iloc[0]
-        limicro_errors.append(config_data['limicro_time_abs_pct_err'])
-        neusight_errors.append(config_data['neusight_time_abs_pct_err'])
-        gee_time_errors.append(config_data['gee_time_abs_pct_err'])
-        gee_power_errors.append(config_data['gee_power_abs_pct_err'])
+        for item in available_series:
+            error_values[item['column']].append(config_data[item['column']])
         # limicro_errors.append(config_data['limicro_time']/config_data['measured_time'])
         # neusight_errors.append(config_data['neusight_time']/config_data['measured_time'])
         # gee_time_errors.append(config_data['gee_time']/config_data['measured_time'])
@@ -135,62 +161,28 @@ def fig9_plot_grouped_error_bars(csv_path, labelmap, model_order=None, figsize=(
         model_groups[prev_model] = (current_model_start, len(unique_configs) - 1)
     
     # Calculate averages
-    limicro_avg_err = df['limicro_time_abs_pct_err'].mean()
-    neusight_avg_err = df['neusight_time_abs_pct_err'].mean()
-    gee_time_avg_err = df['gee_time_abs_pct_err'].mean()
-    gee_power_avg_err = df['gee_power_abs_pct_err'].mean()
-    print("Li MAPE: {:.2f} %".format(limicro_avg_err))
-    print("NeuSight MAPE: {:.2f} %".format(neusight_avg_err))
-    print("GEE MAPE: {:.2f} %".format(gee_time_avg_err))
-    print("GEE POWER MAPE: {:.2f} %".format(gee_power_avg_err))
+    avg_errors = {item['column']: df[item['column']].mean() for item in available_series}
+    for item in available_series:
+        print("{} MAPE: {:.2f} %".format(item['label'], avg_errors[item['column']]))
     
     # Create figure and axis
     fig, ax = plt.subplots(figsize=figsize)
     # ax.axhline(y=1.0, color='black', linestyle='-')
     # Set up bar positions
     x = np.arange(n_configs + 1)  # +1 for average
-    width = 0.2
-    
-    # Define colors and hatches
-    colors = ['#0173b2', '#de8f05', '#029e73', '#cc78bc', 
-          '#ece133', '#56b4e9', '#ca9161', '#949494']
-    color_limicro = "#0173b2"      # Dark gray
-    color_neusight = "#de8f05"     # Light gray
-    color_gee_time = '#029e73'     # Red (as specified)
-    color_gee_power = "#cc78bc"    # Blue (clearly differentiated from red)
-    
-    hatch_limicro = '//'
-    hatch_neusight = 'xx'
-    hatch_gee_time = 'oo'
-    hatch_gee_power = '**'
+    width = min(0.8 / max(len(available_series), 1), 0.2)
     
     # Plot bars for each configuration
-    bars1 = ax.bar(x[:-1] - 1.5*width, limicro_errors, width, 
-                   label='Latency, Li et al.', color=color_limicro, 
-                   edgecolor='black', linewidth=0.5)
-    bars2 = ax.bar(x[:-1] - 0.5*width, neusight_errors, width, 
-                   label='Latency, NeuSight', color=color_neusight,
-                   edgecolor='black', linewidth=0.5)
-    bars3 = ax.bar(x[:-1] + 0.5*width, gee_time_errors, width, 
-                   label='Latency, Ours', color=color_gee_time,
-                   edgecolor='black', linewidth=0.5)
-    bars4 = ax.bar(x[:-1] + 1.5*width, gee_power_errors, width, 
-                   label='Power, Ours', color=color_gee_power, 
-                   edgecolor='black', linewidth=0.5)
+    offsets = (np.arange(len(available_series)) - (len(available_series) - 1) / 2) * width
+    for offset, item in zip(offsets, available_series):
+        ax.bar(x[:-1] + offset, error_values[item['column']], width,
+               label=item['label'], color=item['color'],
+               edgecolor='black', linewidth=0.5)
     
     # Plot average bars
-    bars1_avg = ax.bar(x[-1] - 1.5*width, limicro_avg_err, width, 
-                       color=color_limicro,
-                       edgecolor='black', linewidth=0.5)
-    bars2_avg = ax.bar(x[-1] - 0.5*width, neusight_avg_err, width, 
-                       color=color_neusight,
-                       edgecolor='black', linewidth=0.5)
-    bars3_avg = ax.bar(x[-1] + 0.5*width, gee_time_avg_err, width, 
-                       color=color_gee_time,
-                       edgecolor='black', linewidth=0.5)
-    bars4_avg = ax.bar(x[-1] + 1.5*width, gee_power_avg_err, width, 
-                       color=color_gee_power,
-                       edgecolor='black', linewidth=0.5)
+    for offset, item in zip(offsets, available_series):
+        ax.bar(x[-1] + offset, avg_errors[item['column']], width,
+               color=item['color'], edgecolor='black', linewidth=0.5)
     
     # Add vertical dotted line before average
     ax.axvline(x=n_configs - 0.5, color='black', linestyle=':', linewidth=1.5)
@@ -226,34 +218,20 @@ def fig9_plot_grouped_error_bars(csv_path, labelmap, model_order=None, figsize=(
 
     # Add text annotations for values exceeding y_max
     # For regular configurations
-    for idx in range(len(limicro_errors)):
+    for idx in range(n_configs):
         x_pos = idx
-        
-        # Check each bar type
-        if limicro_errors[idx] > y_max:
-            ax.text(x_pos - 1.5*width, y_max - 2, str(int(limicro_errors[idx])), 
-                   ha='center', va='top', fontsize=7, fontweight='bold', color='black',
-                   bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray', alpha=0.8))
-        
-        if neusight_errors[idx] > y_max:
-            ax.text(x_pos - 0.5*width, y_max - 2, str(int(neusight_errors[idx])), 
-                   ha='center', va='top', fontsize=7, fontweight='bold', color='black',
-                   bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray', alpha=0.8))
-        
-        if gee_time_errors[idx] > y_max:
-            ax.text(x_pos + 0.5*width, y_max - 2, str(int(gee_time_errors[idx])), 
-                   ha='center', va='top', fontsize=7, fontweight='bold', color='black',
-                   bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray', alpha=0.8))
-        
-        if gee_power_errors[idx] > y_max:
-            ax.text(x_pos + 1.5*width, y_max - 2, str(int(gee_power_errors[idx])), 
-                   ha='center', va='top', fontsize=7, fontweight='bold', color='black',
-                   bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray', alpha=0.8))
+        for offset, item in zip(offsets, available_series):
+            value = error_values[item['column']][idx]
+            if value > y_max:
+                ax.text(x_pos + offset, y_max - 2, str(int(value)),
+                       ha='center', va='top', fontsize=7, fontweight='bold', color='black',
+                       bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray', alpha=0.8))
     
     
     # Add legend
     if not no_legend:
-        ax.legend(loc='upper center', fontsize=13, frameon=True, ncols=4, bbox_to_anchor=(0.5, 1.4))
+        ax.legend(loc='upper center', fontsize=13, frameon=True, bbox_to_anchor=(0.5, 1.4),
+                  **_legend_kwargs(len(available_series)))
     
     # Add grid for better readability
     ax.grid(axis='y', alpha=0.8, linestyle='-', linewidth=1)
@@ -378,7 +356,8 @@ def fig11_plot_dvfs(df, configurations, model_name_map):
             ax.set_title(f'{model}, batch={batch}, seq={seq}', fontsize=12, fontweight='bold')
 
         if idx == 0:
-            ax.legend(fontsize=11, loc='upper center', bbox_to_anchor=(1.1, 1.55), ncols=2)
+            ax.legend(fontsize=11, loc='upper center', bbox_to_anchor=(1.1, 1.55),
+                      **_legend_kwargs(2))
 
     plt.subplots_adjust(hspace=0.4)
     
@@ -395,7 +374,11 @@ def get_mape(parent_path, estimation_methods, estimation_nametags):
     power_mape = {}
 
     for i, method in enumerate(estimation_methods):
-        df = pd.read_csv(os.path.join(parent_path, method, 'estimation_result.csv'))
+        result_path = os.path.join(parent_path, method, 'estimation_result.csv')
+        if not os.path.exists(result_path):
+            print("Skipping missing result file: {}".format(result_path))
+            continue
+        df = pd.read_csv(result_path)
         df['power'] = df['energy'] / df['time'] * 1000.
         
         t_m = np.abs(df['time_percent_error']).mean()
@@ -423,8 +406,8 @@ def create_time_bar_plot(ax, input_dict, methods, colors, omit_y=False, title='G
     for tick_name in tick_names:
         time_result, energy_result, power_result = input_dict[tick_name]
         
-        # Extract values for each method (use 0 if method not present)
-        time_values = [time_result.get(method, 0) for method in methods]
+        # Missing methods are left blank in the plot.
+        time_values = [time_result.get(method, np.nan) for method in methods]
         time_data.append(time_values)
     
     # Convert to numpy arrays for easier manipulation
