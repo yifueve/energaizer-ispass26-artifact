@@ -19,6 +19,8 @@ CONFIGURATIONS = [
     ("qwen2model", "qwen2-1p5b", 1, 4096, "prefill"),
 ]
 
+NOMINAL_FREQ = 960
+
 MODEL_NAME_MAP = {
     "gpt2model": "GPT2",
     "optmodel": "OPT",
@@ -38,22 +40,37 @@ def mape(predicted, truth):
     return (np.abs(predicted - truth) / truth * 100.0).mean()
 
 
-def plot(df, output_path):
+def filter_subset(df, model, config, batch, seq, mode):
+    subset = df[
+        (df["model"] == model)
+        & (df["batch"] == batch)
+        & (df["seq"] == seq)
+        & (df["mode"] == mode)
+        & (df["config"] == config)
+    ].copy()
+    subset = subset[np.abs(subset["measured_freq"] - subset["freq"]) <= 90]
+    return subset.sort_values("freq")
+
+
+def power_reduction(subset, column):
+    nominal = subset[subset["freq"] == NOMINAL_FREQ]
+    if nominal.empty:
+        nominal = subset.iloc[[(subset["freq"] - NOMINAL_FREQ).abs().argmin()]]
+
+    high = subset[subset["freq"] == subset["freq"].max()]
+    p_nominal = nominal[column].iloc[0]
+    p_high = high[column].iloc[0]
+    return (p_high - p_nominal) / p_high * 100.0
+
+
+def plot_line_chart(df, output_path):
     df = add_power_columns(df)
     fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(8.5, 8.0), sharex=True)
     axes = axes.flatten()
 
     for idx, (model, config, batch, seq, mode) in enumerate(CONFIGURATIONS):
         ax = axes[idx]
-        subset = df[
-            (df["model"] == model)
-            & (df["batch"] == batch)
-            & (df["seq"] == seq)
-            & (df["mode"] == mode)
-            & (df["config"] == config)
-        ].copy()
-        subset = subset[np.abs(subset["measured_freq"] - subset["freq"]) <= 90]
-        subset = subset.sort_values("freq")
+        subset = filter_subset(df, model, config, batch, seq, mode)
 
         ax.set_xlim(509, 1411)
         ax.set_ylim(0, 420)
@@ -150,6 +167,54 @@ def plot(df, output_path):
     print(f"Saved {output_path}.pdf")
 
 
+def plot_power_reduction_bars(df, output_path):
+    df = add_power_columns(df)
+    labels = []
+    measured = []
+    gee = []
+    attacked_mean = []
+    attacked_bro = []
+
+    for model, config, batch, seq, mode in CONFIGURATIONS:
+        subset = filter_subset(df, model, config, batch, seq, mode)
+        if subset.empty:
+            continue
+
+        labels.append(f"{MODEL_NAME_MAP[model]}\nb{batch}, s{seq}")
+        measured.append(power_reduction(subset, "measured_power"))
+        gee.append(power_reduction(subset, "gee_power"))
+        attacked_mean.append(power_reduction(subset, "gee_attack_mean_power"))
+        attacked_bro.append(power_reduction(subset, "gee_attack_bro_power"))
+
+    x = np.arange(len(labels))
+    width = 0.2
+
+    fig, ax = plt.subplots(figsize=(9.0, 3.2))
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.bar(x - 1.5 * width, measured, width, label="Measured", color="#0173B2")
+    ax.bar(x - 0.5 * width, gee, width, label="Clean GEE", color="#DE8F05")
+    ax.bar(x + 0.5 * width, attacked_mean, width, label="Attacked mean", color="#D55E00")
+    ax.bar(x + 1.5 * width, attacked_bro, width, label="Attacked BRO", color="#029E73")
+
+    ax.set_ylabel("Power reduction (%)", fontsize=11)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, fontsize=9)
+    ax.set_title(
+        f"Power reduction from highest plotted frequency to nominal {NOMINAL_FREQ} MHz",
+        fontsize=11,
+        fontweight="bold",
+    )
+    ax.grid(True, axis="y", alpha=0.3, linestyle="--", linewidth=0.8)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.28), ncol=4, frameon=False)
+    fig.tight_layout()
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    fig.savefig(output_path + ".png", dpi=300, bbox_inches="tight")
+    fig.savefig(output_path + ".pdf", dpi=300, bbox_inches="tight")
+    print(f"Saved {output_path}.png")
+    print(f"Saved {output_path}.pdf")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -160,9 +225,15 @@ def main():
         "--output",
         default="figures/generated/fig11_dvfs_byzantine_attack_demo",
     )
+    parser.add_argument(
+        "--bar_output",
+        default="figures/generated/fig11_dvfs_byzantine_attack_demo_power_reduction",
+    )
     args = parser.parse_args()
 
-    plot(pd.read_csv(args.report), args.output)
+    report = pd.read_csv(args.report)
+    plot_line_chart(report, args.output)
+    plot_power_reduction_bars(report, args.bar_output)
 
 
 if __name__ == "__main__":
