@@ -13,7 +13,9 @@ python run_dvfs_byzantine_robust.py \
   --worker_grouping all \
   --aggregation mean \
   --byzantine_workers 1 \
-  --attack power_high
+  --attack activity_high \
+  --attack_activity_scale 4.0 \
+  --dvfs_idle_power_json ../config/dvfs/yz8/idle_power.json
 
 python run_dvfs_byzantine_robust.py \
   --estimated_result_path ../figures/fig11_dvfs_results/dvfs_estimator_results.csv \
@@ -24,7 +26,9 @@ python run_dvfs_byzantine_robust.py \
   --worker_grouping all \
   --aggregation clipping \
   --byzantine_workers 1 \
-  --attack power_high \
+  --attack activity_high \
+  --attack_activity_scale 4.0 \
+  --dvfs_idle_power_json ../config/dvfs/yz8/idle_power.json \
   --clipping_tau 3.0 \
   --inner_iterations 5
 

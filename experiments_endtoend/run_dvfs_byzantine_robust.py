@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import sys
 import time
@@ -82,13 +83,51 @@ def apply_attack(vectors, attack, count):
             attacked[i] = attacked[i] * 10.0
         elif attack == "low":
             attacked[i] = attacked[i] * 0.1
-        elif attack == "power_high":
-            split = attacked[i].numel() // 2
-            attacked[i] = attacked[i].clone()
-            attacked[i][:split] = attacked[i][:split] * 0.5
-            attacked[i][split:] = attacked[i][split:] * 4.0
+        elif attack == "activity_high":
+            pass
         else:
             raise ValueError(f"Unknown attack: {attack}")
+    return attacked
+
+
+def load_idle_power(path):
+    if path is None:
+        return None
+    with open(path, "r") as f:
+        return {int(k): float(v) for k, v in json.load(f).items()}
+
+
+def get_idle_power(idle_power, freq):
+    if idle_power is None:
+        raise ValueError("--dvfs_idle_power_json is required for activity_high attack.")
+    if freq in idle_power:
+        return idle_power[freq]
+    nearest = min(idle_power, key=lambda x: abs(x - freq))
+    return idle_power[nearest]
+
+
+def apply_worker_curve_attack(
+    worker_df,
+    attack,
+    idle_power,
+    activity_scale,
+    reference_freq,
+    max_freq,
+):
+    if attack != "activity_high":
+        return worker_df
+
+    attacked = worker_df.copy()
+    power = attacked["energy_predicted"] / attacked["time_predicted"] * 1000.0
+    idle = attacked["target_freq"].apply(lambda f: get_idle_power(idle_power, int(f)))
+    dynamic = (power - idle).clip(lower=0.0)
+
+    freq_gain = (
+        (attacked["target_freq"] - reference_freq) / max(max_freq - reference_freq, 1)
+    ).clip(lower=0.0)
+    activity_gain = 1.0 + activity_scale * freq_gain
+    attacked_power = idle + activity_gain * dynamic
+    attacked["energy_predicted"] = attacked_power * attacked["time_predicted"] / 1000.0
     return attacked
 
 
@@ -100,20 +139,32 @@ def robust_group_predictions(
     inner_iterations,
     reference_freq,
     attack,
+    idle_power,
+    activity_scale,
 ):
     workloads = sorted(group["workload"].unique())
     freqs = sorted(group["target_freq"].unique())
     reference_freq = choose_reference_freq(freqs, reference_freq)
 
     worker_vectors = []
-    for workload in workloads:
+    for worker_idx, workload in enumerate(workloads):
         worker_df = group[group["workload"] == workload].sort_values("target_freq")
         missing = sorted(set(freqs) - set(worker_df["target_freq"]))
         if missing:
             raise ValueError(f"{workload} is missing frequencies {missing}.")
+        if worker_idx < byzantine_workers:
+            worker_df = apply_worker_curve_attack(
+                worker_df=worker_df,
+                attack=attack,
+                idle_power=idle_power,
+                activity_scale=activity_scale,
+                reference_freq=reference_freq,
+                max_freq=max(freqs),
+            )
         worker_vectors.append(vectorize_worker_curve(worker_df, freqs, reference_freq))
 
-    worker_vectors = apply_attack(worker_vectors, attack, byzantine_workers)
+    if attack != "activity_high":
+        worker_vectors = apply_attack(worker_vectors, attack, byzantine_workers)
     aggregator = build_aggregator(
         aggregation,
         n_workers=len(worker_vectors),
@@ -190,10 +241,12 @@ def main():
     parser.add_argument("--include_source_estimator", action="store_true", default=False)
     parser.add_argument(
         "--attack",
-        choices=["none", "bitflip", "high", "low", "power_high"],
+        choices=["none", "bitflip", "high", "low", "activity_high"],
         default="none",
         help="Optional synthetic attack applied to the first Byzantine worker curves.",
     )
+    parser.add_argument("--dvfs_idle_power_json", type=str, default=None)
+    parser.add_argument("--attack_activity_scale", type=float, default=4.0)
     args = parser.parse_args()
 
     estimated = pd.read_csv(args.estimated_result_path)
@@ -212,6 +265,7 @@ def main():
         group_key = source["model_name"]
 
     result_rows = []
+    idle_power = load_idle_power(args.dvfs_idle_power_json)
     for _, group in source.groupby(group_key):
         result_rows.extend(
             robust_group_predictions(
@@ -222,6 +276,8 @@ def main():
                 inner_iterations=args.inner_iterations,
                 reference_freq=args.reference_freq,
                 attack=args.attack,
+                idle_power=idle_power,
+                activity_scale=args.attack_activity_scale,
             )
         )
 
