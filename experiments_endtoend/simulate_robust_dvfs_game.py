@@ -56,7 +56,7 @@ def local_metrics(agent, q, f, f_min, f_max):
     return latency, power, energy
 
 
-def potential_cost(x, agents, demand, sla, power_budget, f_min, f_max):
+def potential_cost(x, agents, demand, power_budget, f_min, f_max):
     n_agents = len(agents)
     q = x[:n_agents]
     f = x[n_agents:]
@@ -64,15 +64,20 @@ def potential_cost(x, agents, demand, sla, power_budget, f_min, f_max):
     cost = 0.0
     total_power = 0.0
     for i, agent in enumerate(agents):
-        latency, power, energy = local_metrics(agent, q[i], f[i], f_min, f_max)
+        _, power, energy = local_metrics(agent, q[i], f[i], f_min, f_max)
         total_power += power
         cost += agent["energy_price"] * energy
         cost += 0.35 * agent["carbon"] * energy
-        cost += 25.0 * np.square(max(latency - sla, 0.0))
 
     cost += 150.0 * np.square(q.sum() - demand)
     cost += 0.20 * np.square(max(total_power - power_budget, 0.0))
     return float(cost)
+
+
+def objective_value(x, agents, args):
+    return potential_cost(
+        x, agents, args.demand, args.power_budget, args.f_min, args.f_max
+    )
 
 
 def finite_difference_gradient(x, objective, eps=1e-4):
@@ -128,7 +133,6 @@ def agent_reported_gradients(x, agents, args, rng):
         z,
         agents,
         args.demand,
-        args.sla,
         args.power_budget,
         args.f_min,
         args.f_max,
@@ -145,7 +149,7 @@ def agent_reported_gradients(x, agents, args, rng):
     return reports, true_gradient
 
 
-def summarize_state(iteration, name, x, grad, agents, args):
+def summarize_state(iteration, name, x, grad, accepted_step, agents, args):
     n_agents = len(agents)
     q = x[:n_agents]
     f = x[n_agents:]
@@ -161,9 +165,7 @@ def summarize_state(iteration, name, x, grad, agents, args):
     return {
         "iteration": iteration,
         "method": name,
-        "cost": potential_cost(
-            x, agents, args.demand, args.sla, args.power_budget, args.f_min, args.f_max
-        ),
+        "cost": objective_value(x, agents, args),
         "demand_error": q.sum() - args.demand,
         "total_power": float(np.sum(powers)),
         "power_violation": max(float(np.sum(powers)) - args.power_budget, 0.0),
@@ -171,13 +173,38 @@ def summarize_state(iteration, name, x, grad, agents, args):
         "mean_frequency": float(np.mean(f)),
         "mean_workload": float(np.mean(q)),
         "gradient_norm": float(np.linalg.norm(grad)),
+        "accepted_step": accepted_step,
     }
+
+
+def projected_backtracking_step(x, grad, agents, args):
+    current_cost = objective_value(x, agents, args)
+    grad_norm_sq = float(np.dot(grad, grad))
+    step = args.step_size
+
+    for _ in range(args.line_search_steps):
+        candidate = project_strategy(
+            x - step * grad, len(agents), args.demand, args.f_min, args.f_max
+        )
+        candidate_cost = objective_value(candidate, agents, args)
+        sufficient_decrease = current_cost - args.armijo_c * step * grad_norm_sq
+        if candidate_cost <= sufficient_decrease:
+            return candidate, step
+        step *= args.line_search_shrink
+
+    candidate = project_strategy(
+        x - step * grad, len(agents), args.demand, args.f_min, args.f_max
+    )
+    if objective_value(candidate, agents, args) <= current_cost:
+        return candidate, step
+    return x.copy(), 0.0
 
 
 def run_method(name, x0, agents, args, rng):
     x = x0.copy()
     aggregator = CenteredClipping(args.clip_tau, args.inner_iterations)
     rows = []
+    accepted_step = 0.0
 
     for iteration in range(args.steps + 1):
         reports, true_gradient = agent_reported_gradients(x, agents, args, rng)
@@ -191,12 +218,16 @@ def run_method(name, x0, agents, args, rng):
         else:
             raise ValueError(f"Unknown method: {name}")
 
-        rows.append(summarize_state(iteration, name, x, grad, agents, args))
+        rows.append(summarize_state(iteration, name, x, grad, accepted_step, agents, args))
         if iteration == args.steps:
             break
 
-        x = x - args.step_size * grad
-        x = project_strategy(x, len(agents), args.demand, args.f_min, args.f_max)
+        if args.no_line_search:
+            x = x - args.step_size * grad
+            x = project_strategy(x, len(agents), args.demand, args.f_min, args.f_max)
+            accepted_step = args.step_size
+        else:
+            x, accepted_step = projected_backtracking_step(x, grad, agents, args)
 
     return rows
 
@@ -241,11 +272,14 @@ def parse_args():
     )
     parser.add_argument("--steps", type=int, default=180)
     parser.add_argument("--step_size", type=float, default=0.0025)
+    parser.add_argument("--no_line_search", action="store_true")
+    parser.add_argument("--line_search_steps", type=int, default=16)
+    parser.add_argument("--line_search_shrink", type=float, default=0.5)
+    parser.add_argument("--armijo_c", type=float, default=1e-4)
     parser.add_argument("--clip_tau", type=float, default=9.0)
     parser.add_argument("--inner_iterations", type=int, default=5)
     parser.add_argument("--gradient_noise", type=float, default=0.06)
     parser.add_argument("--demand", type=float, default=9.0)
-    parser.add_argument("--sla", type=float, default=1.35)
     parser.add_argument("--power_budget", type=float, default=760.0)
     parser.add_argument("--f_min", type=float, default=0.55)
     parser.add_argument("--f_max", type=float, default=1.45)
